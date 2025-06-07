@@ -1,27 +1,31 @@
 const schedule = [
     { time: "05:50 - 06:00", name: "Morning Wakeup", subtasks: [], column: 1 },
     { time: "06:00 - 06:30", name: "Freshen Up", subtasks: [], column: 1 },
-    { time: "06:30 - 06:45", name: "Preworkout Meal", subtasks: ["Eat banana", "Drink preworkout", "Boil eggs"], column: 1 },
+    { time: "06:30 - 06:45", name: "Preworkout Meal", subtasks: ["Eat banana", "Drink preworkout", "Keep Eggs for boiling"], column: 1 },
     { time: "06:45 - 07:00", name: "Gym Commute", subtasks: [], column: 1 },
-    { time: "07:00 - 08:20", name: "Weight Training", subtasks: [], column: 1 },
+    { time: "07:00 - 07:10", name: "Stretching", subtasks: [], column: 1 },
+    { time: "07:10 - 08:20", name: "Weight Training", subtasks: [], column: 1 },
     { time: "08:20 - 08:40", name: "Cardio Abs", subtasks: [], column: 1 },
     { time: "08:40 - 09:00", name: "Home Commute", subtasks: ["Buy Chicken"], column: 1 },
-    { time: "09:00 - 09:30", name: "Post-Gym Routine", subtasks: ["Take bath", "Clean floor", "Drink protein", "Marinate Chicken"], column: 1 },
-    { time: "09:30 - 10:00", name: "Hearty Breakfast", subtasks: ["Eggs", "Oats & Paneer"], column: 1 },
-    { time: "10:00 - 11:00", name: "Study Hour", subtasks: [], column: 1 },
-    { time: "11:00 - 12:00", name: "Office Work", subtasks: [], column: 1 },
-    { time: "12:00 - 14:00", name: "Office Work", subtasks: [], column: 2 },
-    { time: "14:00 - 15:30", name: "Lunch Cooking", subtasks: ["Cook chicken", "Make chapati", "Eat meal"], column: 2 },
-    { time: "15:30 - 17:00", name: "Office Work", subtasks: [], column: 2 },
-    { time: "17:00 - 17:30", name: "Evening Walk", subtasks: [], column: 3 },
-    { time: "17:30 - 18:00", name: "Work Wrapup", subtasks: [], column: 3 },
-    { time: "18:00 - 19:00", name: "Personal Time", subtasks: [], column: 3 },
-    { time: "19:00 - 20:00", name: "Dinner Prep", subtasks: [], column: 3 },
-    { time: "20:00 - 21:00", name: "Dinner Time", subtasks: [], column: 3 },
-    { time: "21:00 - 21:30", name: "Wind Down", subtasks: [], column: 4 },
-    { time: "21:30 - 22:00", name: "Free Time", subtasks: [], column: 4 },
-    { time: "22:00 - 23:00", name: "Relaxation", subtasks: [], column: 4 },
-    { time: "23:00 - 23:10", name: "Sleep Time", subtasks: [], column: 4 }
+    
+    { time: "09:00 - 09:30", name: "Post-Gym Routine", subtasks: ["Take bath", "Clean floor", "Drink protein", "Marinate Chicken"], column: 2 },
+    { time: "09:30 - 10:00", name: "Cooking & Breakfast", subtasks: ["Eggs", "Oats & Paneer"], column: 2 },
+    { time: "10:00 - 11:00", name: "Free Time", subtasks: [], column: 2 },
+    
+    { time: "11:00 - 12:00", name: "Office Work", subtasks: [], column: 3 },
+    { time: "12:00 - 14:00", name: "Office Work", subtasks: [], column: 3 },
+    { time: "14:00 - 15:30", name: "Cooking & Lunch", subtasks: ["Cook chicken", "Make chapati", "Eat meal"], column: 3 },
+    { time: "15:30 - 17:30", name: "Office Work", subtasks: [], column: 3 },
+    
+    { time: "17:30 - 18:00", name: "Walk", subtasks: [], column: 4 },
+    { time: "18:00 - 19:00", name: "Work WrapUp", subtasks: [], column: 4 },
+    { time: "19:00 - 20:00", name: "Free Time", subtasks: [], column: 4 },
+    { time: "20:00 - 20:30", name: "Dinner Prep", subtasks: [], column: 4 },
+    
+    { time: "20:30 - 21:30", name: "Dinner Time", subtasks: [], column: 5 },
+    { time: "21:30 - 22:00", name: "Wind Down", subtasks: [], column: 5 },
+    { time: "22:00 - 23:00", name: "Free Time", subtasks: [], column: 5 },
+    { time: "23:00 - 23:10", name: "Sleep Time", subtasks: [], column: 5 }
 ];
 
 function timeToMinutes(timeStr) {
@@ -95,7 +99,7 @@ function renderSchedule() {
     const currentMinutes = getCurrentTimeMinutes();
     
     // Clear all columns
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 1; i <= 5; i++) {
         document.getElementById(`schedule-${i}`).innerHTML = '';
     }
     
@@ -144,7 +148,7 @@ function updateWaterLevel() {
     const progress = calculateProgress();
     
     // Calculate progress for each column
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 1; i <= 5; i++) {
         const columnProgress = calculateColumnProgress(i);
         const waterOverlay = document.getElementById(`water-overlay-${i}`);
         waterOverlay.style.height = `${columnProgress}%`;
