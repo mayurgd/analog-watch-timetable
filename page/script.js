@@ -302,16 +302,6 @@ function updateWaterLevel() {
     progressText.textContent = `Day Progress: ${Math.round(progress)}%`;
 }
 
-function toggleSubtask(checkboxId) {
-    const checkbox = document.getElementById(checkboxId);
-    const subtaskContainer = document.getElementById(`subtask-container-${checkboxId}`);
-    const isChecked = checkbox.classList.contains('checked');
-    
-    checkbox.classList.toggle('checked');
-    subtaskContainer.classList.toggle('completed');
-    checkbox.setAttribute('aria-checked', (!isChecked).toString());
-}
-
 async function fetchSchedule() {
     try {
         const response = await fetch(LAMBDA_URL, {
