@@ -8,7 +8,7 @@ const schedule = [
     { time: "08:20 - 08:40", name: "Cardio Abs", subtasks: [], column: 1 },
     { time: "08:40 - 09:00", name: "Home Commute", subtasks: ["Buy Chicken"], column: 1 },
     
-    { time: "09:00 - 09:30", name: "Post-Gym Routine", subtasks: ["Take bath", "Clean floor", "Drink protein", "Marinate Chicken"], column: 2 },
+    { time: "09:00 - 09:30", name: "Post-Gym Routine", subtasks: ["Room Cleaning",  "Drink protein", "Take bath", "Marinate Chicken"], column: 2 },
     { time: "09:30 - 10:00", name: "Cooking & Breakfast", subtasks: ["Eggs", "Oats & Paneer"], column: 2 },
     { time: "10:00 - 11:00", name: "Free Time", subtasks: [], column: 2 },
     
@@ -27,6 +27,8 @@ const schedule = [
     { time: "22:00 - 23:00", name: "Free Time", subtasks: [], column: 5 },
     { time: "23:00 - 23:10", name: "Sleep Time", subtasks: [], column: 5 }
 ];
+
+let lastRenderMinute = -1;
 
 function timeToMinutes(timeStr) {
     const [hours, minutes] = timeStr.split(':').map(Number);
@@ -97,6 +99,7 @@ function updateClock() {
 
 function renderSchedule() {
     const currentMinutes = getCurrentTimeMinutes();
+    const subtaskStates = loadSubtaskStates();
     
     // Clear all columns
     for (let i = 1; i <= 5; i++) {
@@ -121,9 +124,10 @@ function renderSchedule() {
             subtasksHtml = '<div class="subtasks">';
             task.subtasks.forEach((subtask, subIndex) => {
                 const checkboxId = `subtask-${index}-${subIndex}`;
+                const isSubtaskChecked = subtaskStates[checkboxId] === true;
                 subtasksHtml += `
-                    <div class="subtask" id="subtask-container-${checkboxId}">
-                        <div class="subtask-checkbox" onclick="toggleSubtask('${checkboxId}')" id="${checkboxId}" tabindex="0" role="checkbox" aria-checked="false"></div>
+                    <div class="subtask ${isSubtaskChecked ? 'completed' : ''}" id="subtask-container-${checkboxId}">
+                        <div class="subtask-checkbox ${isSubtaskChecked ? 'checked' : ''}" onclick="toggleSubtask('${checkboxId}')" id="${checkboxId}" tabindex="0" role="checkbox" aria-checked="${isSubtaskChecked}"></div>
                         <span>${subtask}</span>
                     </div>
                 `;
@@ -179,6 +183,32 @@ function toggleTaskCompletion(taskIndex) {
     renderSchedule(); // Re-render to update display
 }
 
+function loadSubtaskStates() {
+    const dateKey = getDateKey();
+    const stored = JSON.parse(localStorage.getItem(`subtaskStates_${dateKey}`)) || {};
+    return stored;
+}
+
+function saveSubtaskStates(subtaskStates) {
+    const dateKey = getDateKey();
+    localStorage.setItem(`subtaskStates_${dateKey}`, JSON.stringify(subtaskStates));
+}
+
+function toggleSubtask(checkboxId) {
+    const checkbox = document.getElementById(checkboxId);
+    const subtaskContainer = document.getElementById(`subtask-container-${checkboxId}`);
+    const isChecked = checkbox.classList.contains('checked');
+    
+    checkbox.classList.toggle('checked');
+    subtaskContainer.classList.toggle('completed');
+    checkbox.setAttribute('aria-checked', (!isChecked).toString());
+    
+    // Save subtask state
+    const subtaskStates = loadSubtaskStates();
+    subtaskStates[checkboxId] = !isChecked;
+    saveSubtaskStates(subtaskStates);
+}
+
 function isTaskCompleted(taskIndex) {
     const completedTasks = loadCompletedTasks();
     return completedTasks.includes(`task_${taskIndex}`);
@@ -219,8 +249,14 @@ function init() {
     // Update every second
     setInterval(() => {
         updateClock();
-        renderSchedule();
         updateWaterLevel();
+        
+        // Only re-render schedule if the minute has changed (for status updates)
+        const currentMinute = Math.floor(getCurrentTimeMinutes());
+        if (currentMinute !== lastRenderMinute) {
+            renderSchedule();
+            lastRenderMinute = currentMinute;
+        }
     }, 1000);
 }
 

@@ -419,29 +419,53 @@ body {
 /* Mobile Responsive */
 @media (max-width: 1200px) {
     .schedule-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
     }
 }
 
 @media (max-width: 768px) {
+    body {
+        overflow-y: auto;
+        height: auto;
+        min-height: 100vh;
+    }
+
     .container {
-        padding: 15px;
+        padding: 10px;
+        height: auto;
+        min-height: 100vh;
     }
 
     .schedule-grid {
-        grid-template-columns: 1fr;
-        gap: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        flex: none;
+    }
+
+    .schedule-column {
+        min-height: auto;
+        max-height: none;
+    }
+
+    .tasks-container {
+        overflow-y: visible;
+        max-height: none;
+        flex: none;
     }
 
     .header {
-        padding: 20px;
-        margin-bottom: 20px;
+        padding: 15px;
+        margin-bottom: 15px;
+        position: sticky;
+        top: 10px;
+        z-index: 100;
     }
 
     .progress-container {
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
     }
 
     .progress-info {
@@ -451,97 +475,152 @@ body {
 
     .task-header {
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
+        align-items: flex-start;
     }
 
     .task-status {
         align-self: flex-start;
-    }
-
-    .task {
-        padding: 15px 20px;
-    }
-
-    .column-header {
-        padding: 15px 20px;
-    }
-}
-
-@media (max-width: 480px) {
-    .container {
-        padding: 10px;
-    }
-
-    .header {
-        padding: 15px;
+        font-size: 0.7rem;
+        padding: 6px 12px;
     }
 
     .task {
         padding: 12px 15px;
     }
 
-    .subtasks {
-        margin-top: 10px;
+    .column-header {
+        padding: 12px 15px;
+    }
+
+    .column-title {
+        font-size: 1.2rem;
+    }
+
+    .task-name {
+        font-size: 1rem;
+    }
+
+    .task-time {
+        font-size: 0.8rem;
+    }
+
+    .digital-clock {
+        font-size: 1.8rem;
+    }
+
+    .date {
+        font-size: 0.9rem;
+    }
+
+    /* Remove water overlay on mobile for better readability */
+    .water-overlay {
+        display: none;
     }
 }
 
-/* Enhanced animations */
-@keyframes pulse {
-    0%, 100% { transform: scale(1); box-shadow: 0 4px 20px rgba(220, 20, 60, 0.4); }
-    50% { transform: scale(1.05); box-shadow: 0 6px 30px rgba(220, 20, 60, 0.6); }
+@media (max-width: 480px) {
+    .container {
+        padding: 8px;
+    }
+
+    .header {
+        padding: 12px;
+        margin-bottom: 12px;
+    }
+
+    .schedule-grid {
+        gap: 12px;
+    }
+
+    .task {
+        padding: 10px 12px;
+    }
+
+    .column-header {
+        padding: 10px 12px;
+    }
+
+    .column-title {
+        font-size: 1.1rem;
+    }
+
+    .task-name {
+        font-size: 0.95rem;
+    }
+
+    .task-time {
+        font-size: 0.75rem;
+    }
+
+    .subtasks {
+        margin-top: 8px;
+    }
+
+    .subtask {
+        font-size: 0.85rem;
+        margin-bottom: 6px;
+    }
+
+    .subtask-checkbox {
+        width: 16px;
+        height: 16px;
+        margin-right: 10px;
+    }
+
+    .digital-clock {
+        font-size: 1.5rem;
+    }
+
+    .date {
+        font-size: 0.8rem;
+    }
+
+    .progress-info {
+        font-size: 0.9rem;
+    }
+
+    .task-status {
+        font-size: 0.65rem;
+        padding: 5px 10px;
+    }
 }
 
-.task.current .task-status {
-    animation: pulse 2s infinite;
-}
+/* ADD this new section for better mobile scrolling */
+@media (max-width: 768px) {
+    /* Ensure smooth scrolling on mobile */
+    html {
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+    }
 
-@keyframes glow {
-    0%, 100% { text-shadow: 0 0 5px var(--bright-red), 0 0 10px var(--bright-red); }
-    50% { text-shadow: 0 0 10px var(--bright-red), 0 0 20px var(--bright-red), 0 0 30px var(--bright-red); }
-}
+    /* Better touch targets */
+    .task-status,
+    .subtask-checkbox {
+        min-height: 44px;
+        min-width: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-.task.current .task-name {
-    animation: glow 3s infinite;
-}
+    .subtask-checkbox {
+        min-height: 32px;
+        min-width: 32px;
+    }
 
-.task-status {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+    /* Improve readability */
+    .task.current {
+        transform: none;
+        border: 2px solid var(--bright-red);
+    }
 
-.task-status:hover {
-    transform: translateY(-2px);
-}
+    .task:hover {
+        transform: none;
+    }
 
-/* Smooth scrolling */
-html {
-    scroll-behavior: smooth;
-}
-
-/* Focus states for accessibility */
-.subtask-checkbox:focus {
-    outline: 2px solid var(--bright-red);
-    outline-offset: 2px;
-}
-
-.task:focus {
-    outline: 2px solid var(--bright-red);
-    outline-offset: -2px;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--primary-black);
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--dark-red);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--bright-red);
+    /* Make header less prominent on mobile */
+    .column-header::before {
+        display: none;
+    }
 }
