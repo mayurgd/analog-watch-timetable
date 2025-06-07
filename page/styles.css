@@ -395,6 +395,27 @@ body {
     color: var(--upcoming-color);
 }
 
+.task.manually-completed .task-name {
+    text-decoration: line-through;
+    opacity: 0.7;
+    color: var(--upcoming-color);
+}
+
+.task.manually-completed .task-time {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+.task-status {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.task-status:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(220, 20, 60, 0.3);
+}
+
 /* Mobile Responsive */
 @media (max-width: 1200px) {
     .schedule-grid {

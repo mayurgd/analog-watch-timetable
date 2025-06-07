@@ -106,13 +106,15 @@ function renderSchedule() {
     schedule.forEach((task, index) => {
         const status = getTaskStatus(task.time, currentMinutes);
         const container = document.getElementById(`schedule-${task.column}`);
+        const isCompleted = isTaskCompleted(index);
         
         const taskElement = document.createElement('div');
-        taskElement.className = `task ${status}`;
+        taskElement.className = `task ${status} ${isCompleted ? 'manually-completed' : ''}`;
         taskElement.setAttribute('tabindex', '0');
         
-        const statusLabel = status === 'completed' ? 'Done' : 
-                          status === 'current' ? 'Now' : 'Later';
+        const statusLabel = isCompleted ? 'Done' : 
+                          (status === 'completed' ? 'Done' : 
+                          status === 'current' ? 'Now' : 'Later');
         
         let subtasksHtml = '';
         if (task.subtasks.length > 0) {
@@ -135,13 +137,51 @@ function renderSchedule() {
                     <div class="task-time">${task.time}</div>
                     <div class="task-name">${task.name}</div>
                 </div>
-                <div class="task-status status-${status}">${statusLabel}</div>
+                <div class="task-status status-${isCompleted ? 'completed' : status}" onclick="toggleTaskCompletion(${index})" style="cursor: pointer;">${statusLabel}</div>
             </div>
             ${subtasksHtml}
         `;
         
         container.appendChild(taskElement);
     });
+}
+
+function getDateKey() {
+    const today = new Date();
+    return `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+}
+
+function loadCompletedTasks() {
+    const dateKey = getDateKey();
+    const stored = JSON.parse(localStorage.getItem(`completedTasks_${dateKey}`)) || [];
+    return stored;
+}
+
+function saveCompletedTasks(completedTasks) {
+    const dateKey = getDateKey();
+    localStorage.setItem(`completedTasks_${dateKey}`, JSON.stringify(completedTasks));
+}
+
+function toggleTaskCompletion(taskIndex) {
+    const completedTasks = loadCompletedTasks();
+    const taskId = `task_${taskIndex}`;
+    
+    if (completedTasks.includes(taskId)) {
+        // Remove from completed
+        const index = completedTasks.indexOf(taskId);
+        completedTasks.splice(index, 1);
+    } else {
+        // Add to completed
+        completedTasks.push(taskId);
+    }
+    
+    saveCompletedTasks(completedTasks);
+    renderSchedule(); // Re-render to update display
+}
+
+function isTaskCompleted(taskIndex) {
+    const completedTasks = loadCompletedTasks();
+    return completedTasks.includes(`task_${taskIndex}`);
 }
 
 function updateWaterLevel() {
