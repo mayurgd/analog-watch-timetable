@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akatsuki Daily Schedule Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="digital-clock" id="clock">00:00:00</div>
+            <div class="date" id="date"></div>
+            <div class="progress-container">
+                <div class="progress-info">
+                    <span id="progress-text">Day Progress: 0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="schedule-grid">
+            <div class="schedule-column">
+                <div class="column-header">
+                    <div class="column-title">Morning</div>
+                    <div class="column-subtitle">5:00 AM - 12:00 PM</div>
+                </div>
+                <div class="water-overlay" id="water-overlay-1"></div>
+                <div class="tasks-container" id="schedule-1"></div>
+            </div>
+
+            <div class="schedule-column">
+                <div class="column-header">
+                    <div class="column-title">Afternoon</div>
+                    <div class="column-subtitle">12:00 PM - 5:00 PM</div>
+                </div>
+                <div class="water-overlay" id="water-overlay-2"></div>
+                <div class="tasks-container" id="schedule-2"></div>
+            </div>
+
+            <div class="schedule-column">
+                <div class="column-header">
+                    <div class="column-title">Evening</div>
+                    <div class="column-subtitle">5:00 PM - 9:00 PM</div>
+                </div>
+                <div class="water-overlay" id="water-overlay-3"></div>
+                <div class="tasks-container" id="schedule-3"></div>
+            </div>
+
+            <div class="schedule-column">
+                <div class="column-header">
+                    <div class="column-title">Night</div>
+                    <div class="column-subtitle">9:00 PM - 5:00 AM</div>
+                </div>
+                <div class="water-overlay" id="water-overlay-4"></div>
+                <div class="tasks-container" id="schedule-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
