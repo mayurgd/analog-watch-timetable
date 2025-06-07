@@ -129,12 +129,23 @@ function renderSchedule() {
                     <div class="task-name">${task.name}</div>
                 </div>
                 <div class="task-actions">
-                    <button class="edit-btn" onclick="openEditModal(${index})" title="Edit Task">✏️</button>
                     <div class="task-status status-${isCompleted ? 'completed' : status}" onclick="toggleTaskCompletion(${index})" style="cursor: pointer;">${statusLabel}</div>
                 </div>
             </div>
             ${subtasksHtml}
         `;
+
+        taskElement.addEventListener('click', function(e) {
+            // Don't open edit modal if clicking on status button or subtask checkboxes
+            if (e.target.classList.contains('task-status') || 
+                e.target.classList.contains('subtask-checkbox') ||
+                e.target.closest('.subtask')) {
+                return;
+            }
+            openEditModal(index);
+        });
+
+        taskElement.style.cursor = 'pointer';
         
         container.appendChild(taskElement);
     });

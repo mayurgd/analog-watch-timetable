@@ -248,9 +248,9 @@ body {
 }
 
 .task:hover {
-    background: rgba(220, 20, 60, 0.1);
-    transform: translateX(5px);
-    box-shadow: -3px 0 0 var(--bright-red);
+    background: rgba(220, 20, 60, 0.15);
+    transform: translateX(8px);
+    box-shadow: -5px 0 0 var(--bright-red), 0 4px 15px rgba(220, 20, 60, 0.2);
 }
 
 .task.completed {
@@ -604,40 +604,19 @@ body {
     gap: 10px;
 }
 
-.edit-btn {
-    background: var(--glass-bg);
-    border: 1px solid var(--dark-red);
-    color: var(--text-light);
-    padding: 6px 8px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 32px;
-    height: 32px;
+.task::after {
+    content: '✏️';
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    opacity: 0;
+    font-size: 14px;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
 }
 
-.edit-btn:hover {
-    background: var(--dark-red);
-    color: var(--text-white);
-    border-color: var(--bright-red);
-    transform: scale(1.1);
-}
-
-@media (max-width: 768px) {
-    .task-actions {
-        flex-direction: column;
-        gap: 8px;
-        align-items: flex-start;
-    }
-    
-    .edit-btn {
-        min-height: 32px;
-        min-width: 40px;
-    }
+.task:hover::after {
+    opacity: 0.6;
 }
 
 /* Mobile Responsive */
@@ -840,7 +819,9 @@ body {
     }
 
     .task:hover {
-        transform: none;
+        background: rgba(220, 20, 60, 0.15);
+        transform: translateX(8px);
+        box-shadow: -5px 0 0 var(--bright-red), 0 4px 15px rgba(220, 20, 60, 0.2);
     }
 
     /* Make header less prominent on mobile */
@@ -878,5 +859,31 @@ body {
     .btn-save {
         width: 100%;
         padding: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .task-actions {
+        flex-direction: row;
+        gap: 10px;
+        align-items: center;
+        justify-content: flex-end;
+    }
+    
+    /* Update task hover for mobile - less transform since it's now clickable */
+    .task:hover {
+        transform: translateX(3px);
+        background: rgba(220, 20, 60, 0.1);
+    }
+    
+    /* Make the edit indicator more visible on mobile */
+    .task::after {
+        opacity: 0.3;
+        right: 8px;
+        top: 6px;
+    }
+    
+    .task:hover::after {
+        opacity: 0.8;
     }
 }
