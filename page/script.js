@@ -3,7 +3,7 @@ const LAMBDA_URL = 'https://phflecg2knll4wycatj5lzbqnq0vetpu.lambda-url.ap-south
 let schedule = [];
 let taskIdMapping = {}; // Map array index to task_id
 let subtaskIdMapping = {}; // Map checkbox id to subtask_id
-
+let currentEditingTaskIndex = null;
 let lastRenderMinute = -1;
 
 function timeToMinutes(timeStr) {
@@ -128,7 +128,10 @@ function renderSchedule() {
                     <div class="task-time">${task.time}</div>
                     <div class="task-name">${task.name}</div>
                 </div>
-                <div class="task-status status-${isCompleted ? 'completed' : status}" onclick="toggleTaskCompletion(${index})" style="cursor: pointer;">${statusLabel}</div>
+                <div class="task-actions">
+                    <button class="edit-btn" onclick="openEditModal(${index})" title="Edit Task">✏️</button>
+                    <div class="task-status status-${isCompleted ? 'completed' : status}" onclick="toggleTaskCompletion(${index})" style="cursor: pointer;">${statusLabel}</div>
+                </div>
             </div>
             ${subtasksHtml}
         `;
@@ -343,6 +346,120 @@ function buildMappings() {
         }
     });
 }
+
+function openEditModal(taskIndex) {
+    currentEditingTaskIndex = taskIndex;
+    const task = schedule[taskIndex];
+    
+    // Populate form fields
+    document.getElementById('editTaskName').value = task.name;
+    document.getElementById('editTaskTime').value = task.time;
+    document.getElementById('editTaskColumn').value = task.column;
+    document.getElementById('editSubtasks').value = task.subtasks.join('\n');
+    
+    // Show modal
+    document.getElementById('editTaskModal').style.display = 'block';
+}
+
+// Function to close edit modal
+function closeEditModal() {
+    document.getElementById('editTaskModal').style.display = 'none';
+    currentEditingTaskIndex = null;
+}
+
+// Function to handle form submission
+async function handleEditTaskSubmit(event) {
+    event.preventDefault();
+    
+    if (currentEditingTaskIndex === null) return;
+    
+    const formData = new FormData(event.target);
+    const taskName = formData.get('taskName').trim();
+    const taskTime = formData.get('taskTime').trim();
+    const taskColumn = parseInt(formData.get('taskColumn'));
+    const subtasksText = formData.get('subtasks').trim();
+    const subtasks = subtasksText ? subtasksText.split('\n').map(s => s.trim()).filter(s => s) : [];
+    
+    // Validate time format (basic validation)
+    const timePattern = /^\d{2}:\d{2}\s*-\s*\d{2}:\d{2}$/;
+    if (!timePattern.test(taskTime)) {
+        alert('Please enter time in format: HH:MM - HH:MM');
+        return;
+    }
+    
+    // Disable submit button during API call
+    const submitBtn = event.target.querySelector('.btn-save');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
+    
+    const task = schedule[currentEditingTaskIndex];
+    const taskId = taskIdMapping[currentEditingTaskIndex];
+    
+    try {
+        const response = await fetch(LAMBDA_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'update_task',
+                task_id: taskId,
+                task_name: taskName,
+                task_timing: taskTime,
+                residing_column: taskColumn,
+                subtasks: subtasks
+            })
+        });
+        
+        if (response.ok) {
+            // Update local schedule data
+            schedule[currentEditingTaskIndex] = {
+                ...task,
+                name: taskName,
+                time: taskTime,
+                column: taskColumn,
+                subtasks: subtasks
+            };
+            
+            // Re-render schedule
+            renderSchedule();
+            closeEditModal();
+            
+            console.log('Task updated successfully');
+        } else {
+            const errorData = await response.json();
+            alert('Error updating task: ' + (errorData.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Network error:', error);
+        alert('Network error. Please try again.');
+    } finally {
+        // Re-enable submit button
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save Changes';
+    }
+}
+
+// Add event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Form submission
+    document.getElementById('editTaskForm').addEventListener('submit', handleEditTaskSubmit);
+    
+    // Close modal when clicking outside
+    document.getElementById('editTaskModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeEditModal();
+        }
+    });
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('editTaskModal').style.display === 'block') {
+            closeEditModal();
+        }
+    });
+});
+
 
 function init() {
     updateClock();

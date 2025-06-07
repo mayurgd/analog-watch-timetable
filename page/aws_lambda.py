@@ -49,6 +49,8 @@ def lambda_handler(event, context):
             return update_task_completion(task_table, body)
         elif action == "update_subtask_completion":
             return update_subtask_completion(subtask_table, body)
+        elif action == "update_task":
+            return update_task(task_table, subtask_table, body)
         else:
             return {
                 "statusCode": 400,
@@ -159,3 +161,65 @@ def update_subtask_completion(subtask_table, body):
         "headers": {"Access-Control-Allow-Origin": "*"},
         "body": json.dumps({"message": "Subtask completion updated successfully"}),
     }
+
+
+def update_task(task_table, subtask_table, body):
+    task_id = body.get("task_id")
+    task_name = body.get("task_name")
+    task_timing = body.get("task_timing")
+    residing_column = body.get("residing_column")
+    new_subtasks = body.get("subtasks", [])
+
+    if not task_id:
+        return {
+            "statusCode": 400,
+            "headers": {"Access-Control-Allow-Origin": "*"},
+            "body": json.dumps({"error": "task_id is required"}),
+        }
+
+    try:
+        # Update the main task
+        task_table.update_item(
+            Key={"task_id": task_id},
+            UpdateExpression="SET task_name = :name, task_timing = :timing, residing_column = :column, has_subtasks = :has_subtasks",
+            ExpressionAttributeValues={
+                ":name": task_name,
+                ":timing": task_timing,
+                ":column": residing_column,
+                ":has_subtasks": len(new_subtasks) > 0,
+            },
+        )
+
+        # Delete existing subtasks for this task
+        existing_subtasks = subtask_table.scan(
+            FilterExpression=Key("task_id").eq(task_id)
+        )
+
+        for subtask in existing_subtasks["Items"]:
+            subtask_table.delete_item(Key={"subtask_id": subtask["subtask_id"]})
+
+        # Add new subtasks
+        for order, subtask_name in enumerate(new_subtasks):
+            subtask_table.put_item(
+                Item={
+                    "subtask_id": str(uuid.uuid4()),
+                    "task_id": task_id,
+                    "order": order,
+                    "subtask_name": subtask_name,
+                    "is_completed": False,
+                }
+            )
+
+        return {
+            "statusCode": 200,
+            "headers": {"Access-Control-Allow-Origin": "*"},
+            "body": json.dumps({"message": "Task updated successfully"}),
+        }
+
+    except Exception as e:
+        print(f"Error updating task: {str(e)}")
+        return {
+            "statusCode": 500,
+            "headers": {"Access-Control-Allow-Origin": "*"},
+            "body": json.dumps({"error": str(e)}),
+        }
