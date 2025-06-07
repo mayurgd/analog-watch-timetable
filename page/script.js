@@ -1,32 +1,8 @@
-const schedule = [
-    { time: "05:50 - 06:00", name: "Morning Wakeup", subtasks: [], column: 1 },
-    { time: "06:00 - 06:30", name: "Freshen Up", subtasks: [], column: 1 },
-    { time: "06:30 - 06:45", name: "Preworkout Meal", subtasks: ["Eat banana", "Drink preworkout", "Keep Eggs for boiling"], column: 1 },
-    { time: "06:45 - 07:00", name: "Gym Commute", subtasks: [], column: 1 },
-    { time: "07:00 - 07:10", name: "Stretching", subtasks: [], column: 1 },
-    { time: "07:10 - 08:20", name: "Weight Training", subtasks: [], column: 1 },
-    { time: "08:20 - 08:40", name: "Cardio Abs", subtasks: [], column: 1 },
-    { time: "08:40 - 09:00", name: "Home Commute", subtasks: ["Buy Chicken"], column: 1 },
-    
-    { time: "09:00 - 09:30", name: "Post-Gym Routine", subtasks: ["Room Cleaning",  "Drink protein", "Take bath", "Marinate Chicken"], column: 2 },
-    { time: "09:30 - 10:00", name: "Cooking & Breakfast", subtasks: ["Eggs", "Oats & Paneer"], column: 2 },
-    { time: "10:00 - 11:00", name: "Free Time", subtasks: [], column: 2 },
-    
-    { time: "11:00 - 12:00", name: "Office Work", subtasks: [], column: 3 },
-    { time: "12:00 - 14:00", name: "Office Work", subtasks: [], column: 3 },
-    { time: "14:00 - 15:30", name: "Cooking & Lunch", subtasks: ["Cook chicken", "Make chapati", "Eat meal"], column: 3 },
-    { time: "15:30 - 17:30", name: "Office Work", subtasks: [], column: 3 },
-    
-    { time: "17:30 - 18:00", name: "Walk", subtasks: [], column: 4 },
-    { time: "18:00 - 19:00", name: "Work WrapUp", subtasks: [], column: 4 },
-    { time: "19:00 - 20:00", name: "Free Time", subtasks: [], column: 4 },
-    { time: "20:00 - 20:30", name: "Dinner Prep", subtasks: [], column: 4 },
-    
-    { time: "20:30 - 21:30", name: "Dinner Time", subtasks: [], column: 5 },
-    { time: "21:30 - 22:00", name: "Wind Down", subtasks: [], column: 5 },
-    { time: "22:00 - 23:00", name: "Free Time", subtasks: [], column: 5 },
-    { time: "23:00 - 23:10", name: "Sleep Time", subtasks: [], column: 5 }
-];
+const LAMBDA_URL = 'https://phflecg2knll4wycatj5lzbqnq0vetpu.lambda-url.ap-southeast-2.on.aws/';
+
+let schedule = [];
+let taskIdMapping = {}; // Map array index to task_id
+let subtaskIdMapping = {}; // Map checkbox id to subtask_id
 
 let lastRenderMinute = -1;
 
@@ -109,7 +85,9 @@ function renderSchedule() {
     schedule.forEach((task, index) => {
         const status = getTaskStatus(task.time, currentMinutes);
         const container = document.getElementById(`schedule-${task.column}`);
-        const isCompleted = isTaskCompleted(index);
+        
+        // Use API completion state if available, otherwise fall back to localStorage
+        const isCompleted = task.hasOwnProperty('is_completed') ? task.is_completed : isTaskCompleted(index);
         
         const taskElement = document.createElement('div');
         taskElement.className = `task ${status} ${isCompleted ? 'manually-completed' : ''}`;
@@ -124,7 +102,16 @@ function renderSchedule() {
             subtasksHtml = '<div class="subtasks">';
             task.subtasks.forEach((subtask, subIndex) => {
                 const checkboxId = `subtask-${index}-${subIndex}`;
-                const isSubtaskChecked = subtaskStates[checkboxId] === true;
+                
+                // Check if we have subtask completion data from API
+                let isSubtaskChecked = false;
+                if (task.subtask_details && task.subtask_details[subIndex]) {
+                    isSubtaskChecked = task.subtask_details[subIndex].is_completed || false;
+                } else {
+                    // Fallback to localStorage
+                    isSubtaskChecked = subtaskStates[checkboxId] === true;
+                }
+                
                 subtasksHtml += `
                     <div class="subtask ${isSubtaskChecked ? 'completed' : ''}" id="subtask-container-${checkboxId}">
                         <div class="subtask-checkbox ${isSubtaskChecked ? 'checked' : ''}" onclick="toggleSubtask('${checkboxId}')" id="${checkboxId}" tabindex="0" role="checkbox" aria-checked="${isSubtaskChecked}"></div>
@@ -166,22 +153,37 @@ function saveCompletedTasks(completedTasks) {
     localStorage.setItem(`completedTasks_${dateKey}`, JSON.stringify(completedTasks));
 }
 
-function toggleTaskCompletion(taskIndex) {
-    const completedTasks = loadCompletedTasks();
-    const taskId = `task_${taskIndex}`;
+async function toggleTaskCompletion(taskIndex) {
+    const task = schedule[taskIndex];
+    const newCompletionState = !task.is_completed;
     
-    if (completedTasks.includes(taskId)) {
-        // Remove from completed
-        const index = completedTasks.indexOf(taskId);
-        completedTasks.splice(index, 1);
-    } else {
-        // Add to completed
-        completedTasks.push(taskId);
+    try {
+        const response = await fetch(LAMBDA_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'update_task_completion',
+                task_id: taskIdMapping[taskIndex],
+                is_completed: newCompletionState
+            })
+        });
+        
+        if (response.ok) {
+            // Update local state
+            schedule[taskIndex].is_completed = newCompletionState;
+            renderSchedule();
+        } else {
+            console.error('Error updating task completion');
+        }
+    } catch (error) {
+        console.error('Network error:', error);
+        // Fallback to localStorage behavior
+        toggleTaskCompletionLocal(taskIndex);
     }
-    
-    saveCompletedTasks(completedTasks);
-    renderSchedule(); // Re-render to update display
 }
+
 
 function loadSubtaskStates() {
     const dateKey = getDateKey();
@@ -194,7 +196,75 @@ function saveSubtaskStates(subtaskStates) {
     localStorage.setItem(`subtaskStates_${dateKey}`, JSON.stringify(subtaskStates));
 }
 
-function toggleSubtask(checkboxId) {
+async function toggleSubtask(checkboxId) {
+    const subtaskId = subtaskIdMapping[checkboxId];
+    const checkbox = document.getElementById(checkboxId);
+    const isCurrentlyChecked = checkbox.classList.contains('checked');
+    const newState = !isCurrentlyChecked;
+    
+    if (subtaskId) {
+        try {
+            const response = await fetch(LAMBDA_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'update_subtask_completion',
+                    subtask_id: subtaskId,
+                    is_completed: newState
+                })
+            });
+            
+            if (response.ok) {
+                // Update UI
+                updateSubtaskUI(checkboxId, newState);
+            } else {
+                console.error('Error updating subtask completion');
+            }
+        } catch (error) {
+            console.error('Network error:', error);
+            // Fallback to localStorage behavior
+            toggleSubtaskLocal(checkboxId);
+        }
+    } else {
+        // Fallback for tasks without subtask IDs
+        toggleSubtaskLocal(checkboxId);
+    }
+}
+
+// Add helper function to update subtask UI
+function updateSubtaskUI(checkboxId, isChecked) {
+    const checkbox = document.getElementById(checkboxId);
+    const subtaskContainer = document.getElementById(`subtask-container-${checkboxId}`);
+    
+    if (isChecked) {
+        checkbox.classList.add('checked');
+        subtaskContainer.classList.add('completed');
+    } else {
+        checkbox.classList.remove('checked');
+        subtaskContainer.classList.remove('completed');
+    }
+    checkbox.setAttribute('aria-checked', isChecked.toString());
+}
+
+// Add fallback functions for localStorage behavior
+function toggleTaskCompletionLocal(taskIndex) {
+    const completedTasks = loadCompletedTasks();
+    const taskId = `task_${taskIndex}`;
+    
+    if (completedTasks.includes(taskId)) {
+        const index = completedTasks.indexOf(taskId);
+        completedTasks.splice(index, 1);
+    } else {
+        completedTasks.push(taskId);
+    }
+    
+    saveCompletedTasks(completedTasks);
+    renderSchedule();
+}
+
+function toggleSubtaskLocal(checkboxId) {
     const checkbox = document.getElementById(checkboxId);
     const subtaskContainer = document.getElementById(`subtask-container-${checkboxId}`);
     const isChecked = checkbox.classList.contains('checked');
@@ -203,11 +273,12 @@ function toggleSubtask(checkboxId) {
     subtaskContainer.classList.toggle('completed');
     checkbox.setAttribute('aria-checked', (!isChecked).toString());
     
-    // Save subtask state
     const subtaskStates = loadSubtaskStates();
     subtaskStates[checkboxId] = !isChecked;
     saveSubtaskStates(subtaskStates);
 }
+
+
 
 function isTaskCompleted(taskIndex) {
     const completedTasks = loadCompletedTasks();
@@ -241,9 +312,51 @@ function toggleSubtask(checkboxId) {
     checkbox.setAttribute('aria-checked', (!isChecked).toString());
 }
 
+async function fetchSchedule() {
+    try {
+        const response = await fetch(LAMBDA_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'get_schedule'
+            })
+        });
+        
+        const data = await response.json();
+        if (response.ok) {
+            schedule = data.schedule;
+            buildMappings();
+            renderSchedule();
+        } else {
+            console.error('Error fetching schedule:', data.error);
+        }
+    } catch (error) {
+        console.error('Network error:', error);
+    }
+}
+
+// Add this function to build mapping objects
+function buildMappings() {
+    taskIdMapping = {};
+    subtaskIdMapping = {};
+    
+    schedule.forEach((task, index) => {
+        taskIdMapping[index] = task.task_id;
+        
+        if (task.subtask_details) {
+            task.subtask_details.forEach((subtask, subIndex) => {
+                const checkboxId = `subtask-${index}-${subIndex}`;
+                subtaskIdMapping[checkboxId] = subtask.subtask_id;
+            });
+        }
+    });
+}
+
 function init() {
     updateClock();
-    renderSchedule();
+    fetchSchedule(); // Fetch from API instead of using static data
     updateWaterLevel();
     
     // Update every second
@@ -258,6 +371,9 @@ function init() {
             lastRenderMinute = currentMinute;
         }
     }, 1000);
+    
+    // Refresh schedule from API every 5 minutes
+    setInterval(fetchSchedule, 5 * 60 * 1000);
 }
 
 // Keyboard accessibility
