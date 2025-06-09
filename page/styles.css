@@ -1331,23 +1331,62 @@ body {
 }
 
 .btn-download {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
+    background: linear-gradient(135deg, var(--dark-red), var(--bright-red));
+    color: var(--text-white);
+    border: 2px solid var(--bright-red);
     padding: 12px 24px;
     border-radius: 8px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 15px rgba(220, 20, 60, 0.3);
+    font-family: 'Cinzel', serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .btn-download:hover {
+    background: linear-gradient(135deg, var(--bright-red), var(--crimson));
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 6px 20px rgba(220, 20, 60, 0.4);
 }
 
 .btn-download:active {
     transform: translateY(0);
+}
+
+/* Mobile responsiveness for download buttons */
+@media (max-width: 768px) {
+    .btn-download {
+        padding: 10px 20px;
+        font-size: 12px;
+        letter-spacing: 0.3px;
+    }
+    
+    .download-container {
+        margin: 8px 0;
+    }
+    
+    .transaction-download-container {
+        margin-left: 0 !important;
+        margin-top: 10px;
+    }
+    
+    .transaction-header {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 480px) {
+    .btn-download {
+        padding: 12px 16px;
+        font-size: 11px;
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .download-container {
+        margin: 6px 0;
+    }
 }

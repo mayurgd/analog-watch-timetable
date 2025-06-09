@@ -796,18 +796,25 @@ function updateTimer() {
     }
 }
 
+
 function getAllTasksData() {
     const allTasksData = [];
     const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
     
     schedule.forEach((task, index) => {
-        const isTaskCompleted = task.hasOwnProperty('is_completed') ? task.is_completed : isTaskCompleted(index);
-        
-        // Get all subtasks for this task
-        let subtasksList = [];
-        let subtaskCompletionList = [];
-        
-        if (task.subtasks && task.subtasks.length > 0) {
+        // If task has no subtasks, add one row with empty subtask
+        if (!task.subtasks || task.subtasks.length === 0) {
+            const isTaskCompleted = task.hasOwnProperty('is_completed') ? task.is_completed : isTaskCompleted(index);
+            
+            allTasksData.push({
+                date: currentDate,
+                time: task.time,
+                task: task.name,
+                subtask: '',
+                is_completed: isTaskCompleted
+            });
+        } else {
+            // Add one row for each subtask with task name repeated
             task.subtasks.forEach((subtask, subIndex) => {
                 const checkboxId = `subtask-${index}-${subIndex}`;
                 
@@ -819,19 +826,15 @@ function getAllTasksData() {
                     isSubtaskCompleted = subtaskStates[checkboxId] === true;
                 }
                 
-                subtasksList.push(subtask);
-                subtaskCompletionList.push(isSubtaskCompleted);
+                allTasksData.push({
+                    date: currentDate,
+                    time: task.time,
+                    task: task.name,
+                    subtask: subtask,
+                    is_completed: isSubtaskCompleted
+                });
             });
         }
-        
-        // Create the data row
-        allTasksData.push({
-            date: currentDate,
-            time: task.time,
-            task: task.name,
-            subtasks: subtasksList.join('; '), // Join multiple subtasks with semicolon
-            is_completed: isTaskCompleted
-        });
     });
     
     return allTasksData;
@@ -919,6 +922,74 @@ function updateInitInterval() {
     }, 1000);
 }
 
+function getAllTransactionsData() {
+    const allTransactionsData = [];
+    
+    transactions.forEach((transaction) => {
+        // Handle Decimal amount properly
+        const amount = typeof transaction.amount === 'object' && transaction.amount !== null 
+            ? parseFloat(transaction.amount) 
+            : parseFloat(transaction.amount);
+        
+        // Use timestamp if available, otherwise fall back to date
+        const dateStr = transaction.timestamp || transaction.date;
+        const date = new Date(dateStr);
+        
+        allTransactionsData.push({
+            date: date.toISOString().split('T')[0], // YYYY-MM-DD format
+            reason: transaction.reason,
+            type: transaction.transaction_type,
+            amount: amount.toFixed(2)
+        });
+    });
+    
+    // Sort by date (newest first)
+    allTransactionsData.sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        return dateB - dateA;
+    });
+    
+    return allTransactionsData;
+}
+
+function downloadTransactions() {
+    try {
+        const allTransactionsData = getAllTransactionsData();
+        
+        if (allTransactionsData.length === 0) {
+            alert('No transactions found!');
+            return;
+        }
+        
+        const csvContent = convertToCSV(allTransactionsData);
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        
+        // Create download link
+        const link = document.createElement('a');
+        const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+        const filename = `transactions_data_${currentDate}.csv`;
+        
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else {
+            // Fallback for older browsers
+            navigator.msSaveBlob(blob, filename);
+        }
+        
+        console.log(`Downloaded data for ${allTransactionsData.length} transactions`);
+        
+    } catch (error) {
+        console.error('Error downloading transactions data:', error);
+        alert('Error downloading file. Please try again.');
+    }
+}
 
 function init() {
     updateClock();
