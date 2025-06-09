@@ -887,3 +887,194 @@ body {
         opacity: 0.8;
     }
 }
+
+/* Add these styles to your styles.css file */
+
+.transaction-section {
+    margin-top: 20px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 2px solid var(--glass-border);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+}
+
+.transaction-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.transaction-header h2 {
+    font-family: 'Cinzel', serif;
+    color: var(--text-white);
+    margin: 0;
+    font-size: 1.5rem;
+    text-shadow: 0 0 10px var(--bright-red);
+}
+
+.transaction-summary {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid;
+}
+
+.summary-item.credit {
+    background: rgba(0, 128, 0, 0.1);
+    border-color: #008000;
+}
+
+.summary-item.debit {
+    background: rgba(220, 20, 60, 0.1);
+    border-color: var(--bright-red);
+}
+
+.summary-item.net {
+    background: rgba(255, 215, 0, 0.1);
+    border-color: #FFD700;
+}
+
+.summary-item .label {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-bottom: 5px;
+}
+
+.summary-item .amount {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-white);
+}
+
+.transaction-input {
+    margin-bottom: 20px;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.input-group input {
+    flex: 1;
+    padding: 12px 15px;
+    background: var(--secondary-black);
+    border: 2px solid var(--dark-red);
+    border-radius: 8px;
+    color: var(--text-white);
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: var(--bright-red);
+    box-shadow: 0 0 10px rgba(220, 20, 60, 0.3);
+}
+
+.btn-add-transaction {
+    padding: 12px 20px;
+    background: linear-gradient(135deg, var(--dark-red), var(--bright-red));
+    color: var(--text-white);
+    border: none;
+    border-radius: 8px;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-add-transaction:hover {
+    background: linear-gradient(135deg, var(--bright-red), var(--crimson));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(220, 20, 60, 0.4);
+}
+
+.transaction-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.transaction-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(220, 20, 60, 0.2);
+    transition: background 0.2s ease;
+}
+
+.transaction-item:hover {
+    background: rgba(220, 20, 60, 0.1);
+}
+
+.transaction-item:last-child {
+    border-bottom: none;
+}
+
+.transaction-info {
+    flex: 1;
+}
+
+.transaction-reason {
+    color: var(--text-white);
+    font-weight: 500;
+    margin-bottom: 3px;
+}
+
+.transaction-date {
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+.transaction-amount {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.transaction-amount.credit {
+    color: #00ff00;
+}
+
+.transaction-amount.debit {
+    color: var(--bright-red);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .transaction-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .transaction-summary {
+        justify-content: space-between;
+    }
+    
+    .summary-item {
+        flex: 1;
+        padding: 8px 10px;
+    }
+    
+    .input-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .btn-add-transaction {
+        width: 100%;
+    }
+}

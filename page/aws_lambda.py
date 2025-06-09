@@ -51,6 +51,12 @@ def lambda_handler(event, context):
             return update_subtask_completion(subtask_table, body)
         elif action == "update_task":
             return update_task(task_table, subtask_table, body)
+        elif action == "add_transaction":
+            transaction_table = dynamodb.Table("transactions_table")
+            return add_transaction(transaction_table, body)
+        elif action == "get_transactions":
+            transaction_table = dynamodb.Table("transactions_table")
+            return get_transactions(transaction_table, body)
         else:
             return {
                 "statusCode": 400,
@@ -223,3 +229,115 @@ def update_task(task_table, subtask_table, body):
             "headers": {"Access-Control-Allow-Origin": "*"},
             "body": json.dumps({"error": str(e)}),
         }
+
+
+def add_transaction(transaction_table, body):
+    transaction_text = body.get("transaction_text", "").strip()
+
+    if not transaction_text:
+        return {
+            "statusCode": 400,
+            "headers": {"Access-Control-Allow-Origin": "*"},
+            "body": json.dumps({"error": "transaction_text is required"}),
+        }
+
+    # Parse the transaction
+    # Format: "reason - amount" or "reason + amount"
+    if " - " in transaction_text:
+        parts = transaction_text.split(" - ", 1)
+        reason = parts[0].strip()
+        amount_str = parts[1].strip()
+        transaction_type = "debit"
+        try:
+            amount = float(amount_str)
+        except ValueError:
+            return {
+                "statusCode": 400,
+                "headers": {"Access-Control-Allow-Origin": "*"},
+                "body": json.dumps({"error": "Invalid amount format"}),
+            }
+    elif " + " in transaction_text:
+        parts = transaction_text.split(" + ", 1)
+        reason = parts[0].strip()
+        amount_str = parts[1].strip()
+        transaction_type = "credit"
+        try:
+            amount = float(amount_str)
+        except ValueError:
+            return {
+                "statusCode": 400,
+                "headers": {"Access-Control-Allow-Origin": "*"},
+                "body": json.dumps({"error": "Invalid amount format"}),
+            }
+    else:
+        return {
+            "statusCode": 400,
+            "headers": {"Access-Control-Allow-Origin": "*"},
+            "body": json.dumps(
+                {"error": "Format should be 'reason - amount' or 'reason + amount'"}
+            ),
+        }
+
+    # Get current date
+    from datetime import datetime
+
+    current_date = datetime.utcnow().strftime("%Y-%m-%d")
+
+    # Add transaction to database
+    transaction_table.put_item(
+        Item={
+            "transaction_id": str(uuid.uuid4()),
+            "date": current_date,
+            "transaction_type": transaction_type,
+            "reason": reason,
+            "amount": decimal.Decimal(str(amount)),
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    )
+
+    return {
+        "statusCode": 200,
+        "headers": {"Access-Control-Allow-Origin": "*"},
+        "body": json.dumps({"message": "Transaction added successfully"}),
+    }
+
+
+def get_transactions(transaction_table, body):
+    date_filter = body.get("date")  # Optional date filter
+
+    if date_filter:
+        # Get transactions for specific date
+        response = transaction_table.scan(FilterExpression=Key("date").eq(date_filter))
+    else:
+        # Get all transactions
+        response = transaction_table.scan()
+
+    transactions = response["Items"]
+
+    # Sort by timestamp (newest first)
+    transactions.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+
+    # Calculate totals
+    total_credit = sum(
+        float(t["amount"]) for t in transactions if t["transaction_type"] == "credit"
+    )
+    total_debit = sum(
+        float(t["amount"]) for t in transactions if t["transaction_type"] == "debit"
+    )
+    net_amount = total_credit - total_debit
+
+    return {
+        "statusCode": 200,
+        "headers": {"Access-Control-Allow-Origin": "*"},
+        "body": json.dumps(
+            {
+                "transactions": transactions,
+                "summary": {
+                    "total_credit": total_credit,
+                    "total_debit": total_debit,
+                    "net_amount": net_amount,
+                },
+            },
+            cls=DecimalEncoder,
+        ),
+    }

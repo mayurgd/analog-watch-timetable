@@ -67,6 +67,39 @@
                 <div class="tasks-container" id="schedule-5"></div>
             </div>
         </div>
+
+        <div class="transaction-section">
+            <div class="transaction-header">
+                <h2>Money Tracker</h2>
+                <div class="transaction-summary" id="transaction-summary">
+                    <div class="summary-item credit">
+                        <span class="label">Income:</span>
+                        <span class="amount" id="total-credit">₹0</span>
+                    </div>
+                    <div class="summary-item debit">
+                        <span class="label">Expenses:</span>
+                        <span class="amount" id="total-debit">₹0</span>
+                    </div>
+                    <div class="summary-item net">
+                        <span class="label">Net:</span>
+                        <span class="amount" id="net-amount">₹0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="transaction-input">
+                <form id="transactionForm">
+                    <div class="input-group">
+                        <input type="text" id="transactionText" placeholder="e.g., Buying chicken - 425 or Salary + 50000" required>
+                        <button type="submit" class="btn-add-transaction">Add</button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="transaction-list" id="transaction-list">
+                <!-- Transactions will be populated here -->
+            </div>
+        </div>
     </div>
     <!-- Edit Task Modal -->
     <div id="editTaskModal" class="modal">
