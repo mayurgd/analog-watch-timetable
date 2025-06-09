@@ -57,6 +57,9 @@ def lambda_handler(event, context):
         elif action == "get_transactions":
             transaction_table = dynamodb.Table("daily_transactions_table")
             return get_transactions(transaction_table, body)
+        elif action == "delete_transaction":
+            transaction_table = dynamodb.Table("daily_transactions_table")
+            return delete_transaction(transaction_table, body)
         else:
             return {
                 "statusCode": 400,
@@ -341,3 +344,32 @@ def get_transactions(transaction_table, body):
             cls=DecimalEncoder,
         ),
     }
+
+
+def delete_transaction(transaction_table, body):
+    transaction_id = body.get("transaction_id")
+
+    if not transaction_id:
+        return {
+            "statusCode": 400,
+            "headers": {"Access-Control-Allow-Origin": "*"},
+            "body": json.dumps({"error": "transaction_id is required"}),
+        }
+
+    try:
+        # Delete the transaction from the table
+        transaction_table.delete_item(Key={"transaction_id": transaction_id})
+
+        return {
+            "statusCode": 200,
+            "headers": {"Access-Control-Allow-Origin": "*"},
+            "body": json.dumps({"message": "Transaction deleted successfully"}),
+        }
+
+    except Exception as e:
+        print(f"Error deleting transaction: {str(e)}")
+        return {
+            "statusCode": 500,
+            "headers": {"Access-Control-Allow-Origin": "*"},
+            "body": json.dumps({"error": str(e)}),
+        }

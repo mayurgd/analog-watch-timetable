@@ -503,6 +503,11 @@ function parseTransactionInput(input) {
 
 async function addTransaction(transactionData) {
     try {
+        // Format the transaction text according to Lambda expectations
+        const transactionText = transactionData.type === 'credit' 
+            ? `${transactionData.reason} + ${transactionData.amount}`
+            : `${transactionData.reason} - ${transactionData.amount}`;
+            
         const response = await fetch(LAMBDA_URL, {
             method: 'POST',
             headers: {
@@ -510,9 +515,7 @@ async function addTransaction(transactionData) {
             },
             body: JSON.stringify({
                 action: 'add_transaction',
-                transaction_type: transactionData.type,
-                reason: transactionData.reason,
-                amount: transactionData.amount
+                transaction_text: transactionText  // Changed from separate fields to single text
             })
         });
         
@@ -548,7 +551,7 @@ async function fetchTransactions() {
             transactions = data.transactions || [];
             buildTransactionMappings();
             renderTransactions();
-            updateTransactionSummary();
+            updateTransactionSummary(data.summary); // Pass summary from API
         } else {
             console.error('Error fetching transactions:', data.error);
         }
@@ -568,16 +571,18 @@ function renderTransactions() {
     const container = document.getElementById('transaction-list');
     container.innerHTML = '';
     
-    // Sort transactions by date (newest first)
+    // Sort transactions by timestamp (newest first) - use timestamp instead of date
     const sortedTransactions = [...transactions].sort((a, b) => 
-        new Date(b.date) - new Date(a.date)
+        new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date)
     );
     
     sortedTransactions.forEach((transaction) => {
         const transactionElement = document.createElement('div');
         transactionElement.className = 'transaction-item';
         
-        const date = new Date(transaction.date);
+        // Use timestamp if available, otherwise fall back to date
+        const dateStr = transaction.timestamp || transaction.date;
+        const date = new Date(dateStr);
         const formattedDate = date.toLocaleDateString('en-IN', {
             day: '2-digit',
             month: 'short',
@@ -585,13 +590,18 @@ function renderTransactions() {
             minute: '2-digit'
         });
         
+        // Handle Decimal amount properly
+        const amount = typeof transaction.amount === 'object' && transaction.amount !== null 
+            ? parseFloat(transaction.amount) 
+            : parseFloat(transaction.amount);
+        
         transactionElement.innerHTML = `
             <div class="transaction-info">
                 <div class="transaction-reason">${transaction.reason}</div>
                 <div class="transaction-date">${formattedDate}</div>
             </div>
             <div class="transaction-amount ${transaction.transaction_type}">
-                ${transaction.transaction_type === 'credit' ? '+' : '-'}₹${transaction.amount.toFixed(2)}
+                ${transaction.transaction_type === 'credit' ? '+' : '-'}₹${amount.toFixed(2)}
             </div>
             <button class="btn-delete-transaction" onclick="deleteTransaction(${transactions.indexOf(transaction)})" style="margin-left: 10px; padding: 5px 10px; background: var(--bright-red); color: white; border: none; border-radius: 4px; cursor: pointer;">×</button>
         `;
@@ -600,16 +610,26 @@ function renderTransactions() {
     });
 }
 
-function updateTransactionSummary() {
-    const totalCredit = transactions
-        .filter(t => t.transaction_type === 'credit')
-        .reduce((sum, t) => sum + t.amount, 0);
+function updateTransactionSummary(apiSummary = null) {
+    let totalCredit, totalDebit, netAmount;
     
-    const totalDebit = transactions
-        .filter(t => t.transaction_type === 'debit')
-        .reduce((sum, t) => sum + t.amount, 0);
-    
-    const netAmount = totalCredit - totalDebit;
+    if (apiSummary) {
+        // Use summary from API
+        totalCredit = apiSummary.total_credit;
+        totalDebit = apiSummary.total_debit;
+        netAmount = apiSummary.net_amount;
+    } else {
+        // Fallback to client-side calculation
+        totalCredit = transactions
+            .filter(t => t.transaction_type === 'credit')
+            .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+        
+        totalDebit = transactions
+            .filter(t => t.transaction_type === 'debit')
+            .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+        
+        netAmount = totalCredit - totalDebit;
+    }
     
     document.getElementById('total-credit').textContent = `₹${totalCredit.toFixed(2)}`;
     document.getElementById('total-debit').textContent = `₹${totalDebit.toFixed(2)}`;
