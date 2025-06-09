@@ -796,6 +796,111 @@ function updateTimer() {
     }
 }
 
+function getAllTasksData() {
+    const allTasksData = [];
+    const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    
+    schedule.forEach((task, index) => {
+        const isTaskCompleted = task.hasOwnProperty('is_completed') ? task.is_completed : isTaskCompleted(index);
+        
+        // Get all subtasks for this task
+        let subtasksList = [];
+        let subtaskCompletionList = [];
+        
+        if (task.subtasks && task.subtasks.length > 0) {
+            task.subtasks.forEach((subtask, subIndex) => {
+                const checkboxId = `subtask-${index}-${subIndex}`;
+                
+                let isSubtaskCompleted = false;
+                if (task.subtask_details && task.subtask_details[subIndex]) {
+                    isSubtaskCompleted = task.subtask_details[subIndex].is_completed || false;
+                } else {
+                    const subtaskStates = loadSubtaskStates();
+                    isSubtaskCompleted = subtaskStates[checkboxId] === true;
+                }
+                
+                subtasksList.push(subtask);
+                subtaskCompletionList.push(isSubtaskCompleted);
+            });
+        }
+        
+        // Create the data row
+        allTasksData.push({
+            date: currentDate,
+            time: task.time,
+            task: task.name,
+            subtasks: subtasksList.join('; '), // Join multiple subtasks with semicolon
+            is_completed: isTaskCompleted
+        });
+    });
+    
+    return allTasksData;
+}
+
+function convertToCSV(data) {
+    if (data.length === 0) {
+        return 'No completed tasks found for today';
+    }
+    
+    // Get headers
+    const headers = Object.keys(data[0]);
+    
+    // Create CSV content
+    let csvContent = headers.join(',') + '\n';
+    
+    data.forEach(row => {
+        const values = headers.map(header => {
+            const value = row[header] || '';
+            // Escape commas and quotes in CSV
+            if (value.toString().includes(',') || value.toString().includes('"')) {
+                return `"${value.toString().replace(/"/g, '""')}"`;
+            }
+            return value;
+        });
+        csvContent += values.join(',') + '\n';
+    });
+    
+    return csvContent;
+}
+
+function downloadCompletedTasks() {
+    try {
+        const allTasksData = getAllTasksData();
+        
+        if (allTasksData.length === 0) {
+            alert('No tasks found!');
+            return;
+        }
+        
+        const csvContent = convertToCSV(allTasksData);
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        
+        // Create download link
+        const link = document.createElement('a');
+        const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+        const filename = `tasks_data_${currentDate}.csv`;
+        
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else {
+            // Fallback for older browsers
+            navigator.msSaveBlob(blob, filename);
+        }
+        
+        console.log(`Downloaded data for ${allTasksData.length} tasks`);
+        
+    } catch (error) {
+        console.error('Error downloading tasks data:', error);
+        alert('Error downloading file. Please try again.');
+    }
+}
+
 // Modify the existing init() function to include timer updates
 // Replace the setInterval section in your init() function with this:
 function updateInitInterval() {
