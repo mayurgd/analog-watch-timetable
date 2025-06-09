@@ -52,10 +52,10 @@ def lambda_handler(event, context):
         elif action == "update_task":
             return update_task(task_table, subtask_table, body)
         elif action == "add_transaction":
-            transaction_table = dynamodb.Table("transactions_table")
+            transaction_table = dynamodb.Table("daily_transactions_table")
             return add_transaction(transaction_table, body)
         elif action == "get_transactions":
-            transaction_table = dynamodb.Table("transactions_table")
+            transaction_table = dynamodb.Table("daily_transactions_table")
             return get_transactions(transaction_table, body)
         else:
             return {
