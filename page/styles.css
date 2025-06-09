@@ -1188,7 +1188,7 @@ body {
     }
 }
 
-/* Add these styles to your styles.css file */
+
 .timer-container {
     display: flex;
     justify-content: space-between;
@@ -1198,10 +1198,30 @@ body {
     border-radius: 12px;
     padding: 12px 20px;
     margin: 15px auto 0 auto;
-    max-width: 400px;
+    max-width: 90%;
     width: fit-content;
+    min-width: 280px;
     font-family: 'Cinzel', serif;
     box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+    .timer-container {
+        padding: 10px 15px;
+        margin: 10px auto 0 auto;
+        max-width: 95%;
+        min-width: 250px;
+    }
+}
+
+@media (max-width: 480px) {
+    .timer-container {
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px 15px;
+        text-align: center;
+        min-width: 200px;
+    }
 }
 
 .timer-info {
@@ -1212,10 +1232,24 @@ body {
     margin-right: 20px;
 }
 
+@media (max-width: 480px) {
+    .timer-info {
+        align-items: center;
+        margin-right: 0;
+        margin-bottom: 0;
+    }
+}
+
 #timer-label {
     font-size: 14px;
     color: rgba(255, 215, 0, 0.8);
     font-weight: 500;
+}
+
+@media (max-width: 480px) {
+    #timer-label {
+        font-size: 12px;
+    }
 }
 
 #next-task-name {
@@ -1227,6 +1261,23 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 200px;
+}
+
+@media (max-width: 768px) {
+    #next-task-name {
+        max-width: 150px;
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    #next-task-name {
+        white-space: normal;
+        max-width: none;
+        font-size: 14px;
+        text-align: center;
+        margin-top: 4px;
+    }
 }
 
 .timer-display {
@@ -1241,6 +1292,20 @@ body {
     text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
     min-width: 80px;
     text-align: center;
+}
+
+@media (max-width: 768px) {
+    #countdown-timer {
+        font-size: 22px;
+        min-width: 70px;
+    }
+}
+
+@media (max-width: 480px) {
+    #countdown-timer {
+        font-size: 20px;
+        min-width: 60px;
+    }
 }
 
 .timer-container.current-task {
