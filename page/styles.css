@@ -233,7 +233,7 @@ body {
     flex: 1;
     overflow-y: auto;
     min-height: 300px;
-    max-height: 500px;
+    max-height: 700px;
 }
 
 .task {
@@ -883,8 +883,6 @@ body {
     }
 }
 
-/* Add these styles to your styles.css file */
-
 .transaction-section {
     margin-top: 20px;
     background: var(--glass-bg);
@@ -893,7 +891,7 @@ body {
     border-radius: 15px;
     padding: 20px;
     box-shadow: var(--shadow);
-    height: 400px; /* Fixed height */
+    height: 600px; /* Fixed height */
     display: flex;
     flex-direction: column;
 }
@@ -1074,8 +1072,17 @@ body {
 
 @media (max-width: 768px) {
     .transaction-section {
-        height: 350px; /* Smaller height on mobile */
+        height: 800px; /* Increased from 700px */
         padding: 15px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .transaction-list {
+        flex: 1; /* Take remaining space */
+        overflow-y: auto; /* Ensure scrolling */
+        min-height: 0; /* Allow flex to work */
+        max-height: none; /* Remove max-height restriction */
     }
     
     .transaction-header {
@@ -1098,7 +1105,7 @@ body {
     .summary-item {
         flex: 1;
         padding: 8px 5px;
-        min-width: 0; /* Prevent overflow */
+        min-width: 0;
     }
     
     .summary-item .label {
@@ -1133,8 +1140,17 @@ body {
 
 @media (max-width: 480px) {
     .transaction-section {
-        height: 320px;
+        height: 500px; /* Increased from 350px */
         padding: 12px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .transaction-list {
+        flex: 1; /* Take remaining space */
+        overflow-y: auto; /* Ensure scrolling */
+        min-height: 0; /* Allow flex to work */
+        max-height: none; /* Remove max-height restriction */
     }
     
     .summary-item {
@@ -1165,14 +1181,14 @@ body {
     
     .transaction-reason {
         font-size: 0.85rem;
-        margin-bottom: 0;
+        margin-bottom: 2px; /* Show date but with less margin */
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
     
     .transaction-date {
-        display: none; /* Hide date on very small screens to save space */
+        font-size: 0.7rem; /* Make date smaller but keep it visible */
     }
     
     .transaction-amount {
