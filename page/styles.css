@@ -1187,3 +1187,74 @@ body {
         margin-right: 8px;
     }
 }
+
+/* Add these styles to your styles.css file */
+.timer-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin: 15px auto 0 auto;
+    max-width: 400px;
+    width: fit-content;
+    font-family: 'Cinzel', serif;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
+}
+
+.timer-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    flex: 1;
+    margin-right: 20px;
+}
+
+#timer-label {
+    font-size: 14px;
+    color: rgba(255, 215, 0, 0.8);
+    font-weight: 500;
+}
+
+#next-task-name {
+    font-size: 16px;
+    color: #ffd700;
+    font-weight: 600;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.timer-display {
+    display: flex;
+    align-items: center;
+}
+
+#countdown-timer {
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffd700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    min-width: 80px;
+    text-align: center;
+}
+
+.timer-container.current-task {
+    background: rgba(0, 255, 0, 0.1);
+    border-color: rgba(0, 255, 0, 0.3);
+    box-shadow: 0 4px 15px rgba(0, 255, 0, 0.2);
+}
+
+.timer-container.current-task #timer-label,
+.timer-container.current-task #next-task-name,
+.timer-container.current-task #countdown-timer {
+    color: #00ff00;
+}
+
+.timer-container.current-task #countdown-timer {
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}

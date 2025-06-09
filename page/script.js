@@ -701,16 +701,132 @@ function handleTransactionSubmit(event) {
     });
 }
 
+function getNextTask(currentMinutes) {
+    // Sort tasks by start time
+    const sortedTasks = [...schedule].sort((a, b) => {
+        const aStart = timeToMinutes(a.time.split(' - ')[0]);
+        const bStart = timeToMinutes(b.time.split(' - ')[0]);
+        return aStart - bStart;
+    });
+    
+    // Find the next upcoming task
+    for (let task of sortedTasks) {
+        const taskStart = timeToMinutes(task.time.split(' - ')[0]);
+        if (taskStart > currentMinutes) {
+            return task;
+        }
+    }
+    
+    // If no upcoming task today, return the first task of tomorrow
+    if (sortedTasks.length > 0) {
+        return {
+            ...sortedTasks[0],
+            isNextDay: true
+        };
+    }
+    
+    return null;
+}
+
+function getCurrentTask(currentMinutes) {
+    return schedule.find(task => {
+        const [startTime, endTime] = task.time.split(' - ');
+        const startMinutes = timeToMinutes(startTime);
+        const endMinutes = timeToMinutes(endTime);
+        return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+    });
+}
+
+function formatCountdownTime(minutes) {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+}
+
+function updateTimer() {
+    const currentMinutes = getCurrentTimeMinutes();
+    const timerContainer = document.querySelector('.timer-container');
+    const timerLabel = document.getElementById('timer-label');
+    const nextTaskName = document.getElementById('next-task-name');
+    const countdownTimer = document.getElementById('countdown-timer');
+    
+    if (!timerContainer) return; // Exit if timer elements don't exist yet
+    
+    // Check if there's a current task
+    const currentTask = getCurrentTask(currentMinutes);
+    
+    if (currentTask) {
+        // Show current task info
+        const [startTime, endTime] = currentTask.time.split(' - ');
+        const endMinutes = timeToMinutes(endTime);
+        const timeLeft = endMinutes - currentMinutes;
+        
+        timerContainer.className = 'timer-container current-task';
+        timerLabel.textContent = 'Current Task:';
+        nextTaskName.textContent = currentTask.name;
+        countdownTimer.textContent = timeLeft > 0 ? formatCountdownTime(timeLeft) : 'Ending';
+    } else {
+        // Show next task info
+        const nextTask = getNextTask(currentMinutes);
+        
+        timerContainer.className = 'timer-container';
+        
+        if (nextTask) {
+            const taskStart = timeToMinutes(nextTask.time.split(' - ')[0]);
+            let timeUntilNext;
+            
+            if (nextTask.isNextDay) {
+                // Calculate time until tomorrow's first task
+                const minutesUntilMidnight = (24 * 60) - currentMinutes;
+                timeUntilNext = minutesUntilMidnight + taskStart;
+                timerLabel.textContent = 'Tomorrow:';
+            } else {
+                timeUntilNext = taskStart - currentMinutes;
+                timerLabel.textContent = 'Next Task:';
+            }
+            
+            nextTaskName.textContent = nextTask.name;
+            countdownTimer.textContent = formatCountdownTime(timeUntilNext);
+        } else {
+            timerLabel.textContent = 'No Tasks';
+            nextTaskName.textContent = 'Scheduled';
+            countdownTimer.textContent = '--:--';
+        }
+    }
+}
+
+// Modify the existing init() function to include timer updates
+// Replace the setInterval section in your init() function with this:
+function updateInitInterval() {
+    // Update every second
+    setInterval(() => {
+        updateClock();
+        updateWaterLevel();
+        updateTimer(); // Add this line
+        
+        // Only re-render schedule if the minute has changed (for status updates)
+        const currentMinute = Math.floor(getCurrentTimeMinutes());
+        if (currentMinute !== lastRenderMinute) {
+            renderSchedule();
+            lastRenderMinute = currentMinute;
+        }
+    }, 1000);
+}
+
+
 function init() {
     updateClock();
     fetchSchedule(); // Fetch from API instead of using static data
     fetchTransactions(); // Add this line
     updateWaterLevel();
+    updateTimer(); // Add this line for initial timer update
     
     // Update every second
     setInterval(() => {
         updateClock();
         updateWaterLevel();
+        updateTimer(); // Add this line
         
         // Only re-render schedule if the minute has changed (for status updates)
         const currentMinute = Math.floor(getCurrentTimeMinutes());
