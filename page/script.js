@@ -5,6 +5,8 @@ let taskIdMapping = {}; // Map array index to task_id
 let subtaskIdMapping = {}; // Map checkbox id to subtask_id
 let currentEditingTaskIndex = null;
 let lastRenderMinute = -1;
+let transactions = [];
+let transactionIdMapping = {};
 
 function timeToMinutes(timeStr) {
     const [hours, minutes] = timeStr.split(':').map(Number);
@@ -456,6 +458,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Form submission
     document.getElementById('editTaskForm').addEventListener('submit', handleEditTaskSubmit);
     
+    // Transaction form submission - ADD THIS
+    document.getElementById('transactionForm').addEventListener('submit', handleTransactionSubmit);
+    
     // Close modal when clicking outside
     document.getElementById('editTaskModal').addEventListener('click', function(e) {
         if (e.target === this) {
@@ -471,10 +476,215 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Transaction Functions
+function parseTransactionInput(input) {
+    const text = input.trim();
+    
+    // Check for + or - at the end
+    const creditMatch = text.match(/^(.+?)\s*\+\s*(\d+(?:\.\d{2})?)$/);
+    const debitMatch = text.match(/^(.+?)\s*[-−]\s*(\d+(?:\.\d{2})?)$/);
+    
+    if (creditMatch) {
+        return {
+            reason: creditMatch[1].trim(),
+            amount: parseFloat(creditMatch[2]),
+            type: 'credit'
+        };
+    } else if (debitMatch) {
+        return {
+            reason: debitMatch[1].trim(),
+            amount: parseFloat(debitMatch[2]),
+            type: 'debit'
+        };
+    } else {
+        return null;
+    }
+}
+
+async function addTransaction(transactionData) {
+    try {
+        const response = await fetch(LAMBDA_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'add_transaction',
+                transaction_type: transactionData.type,
+                reason: transactionData.reason,
+                amount: transactionData.amount
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            await fetchTransactions(); // Refresh the list
+            return true;
+        } else {
+            const errorData = await response.json();
+            console.error('Error adding transaction:', errorData.error);
+            return false;
+        }
+    } catch (error) {
+        console.error('Network error:', error);
+        return false;
+    }
+}
+
+async function fetchTransactions() {
+    try {
+        const response = await fetch(LAMBDA_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'get_transactions'
+            })
+        });
+        
+        const data = await response.json();
+        if (response.ok) {
+            transactions = data.transactions || [];
+            buildTransactionMappings();
+            renderTransactions();
+            updateTransactionSummary();
+        } else {
+            console.error('Error fetching transactions:', data.error);
+        }
+    } catch (error) {
+        console.error('Network error:', error);
+    }
+}
+
+function buildTransactionMappings() {
+    transactionIdMapping = {};
+    transactions.forEach((transaction, index) => {
+        transactionIdMapping[index] = transaction.transaction_id;
+    });
+}
+
+function renderTransactions() {
+    const container = document.getElementById('transaction-list');
+    container.innerHTML = '';
+    
+    // Sort transactions by date (newest first)
+    const sortedTransactions = [...transactions].sort((a, b) => 
+        new Date(b.date) - new Date(a.date)
+    );
+    
+    sortedTransactions.forEach((transaction) => {
+        const transactionElement = document.createElement('div');
+        transactionElement.className = 'transaction-item';
+        
+        const date = new Date(transaction.date);
+        const formattedDate = date.toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        transactionElement.innerHTML = `
+            <div class="transaction-info">
+                <div class="transaction-reason">${transaction.reason}</div>
+                <div class="transaction-date">${formattedDate}</div>
+            </div>
+            <div class="transaction-amount ${transaction.transaction_type}">
+                ${transaction.transaction_type === 'credit' ? '+' : '-'}₹${transaction.amount.toFixed(2)}
+            </div>
+            <button class="btn-delete-transaction" onclick="deleteTransaction(${transactions.indexOf(transaction)})" style="margin-left: 10px; padding: 5px 10px; background: var(--bright-red); color: white; border: none; border-radius: 4px; cursor: pointer;">×</button>
+        `;
+        
+        container.appendChild(transactionElement);
+    });
+}
+
+function updateTransactionSummary() {
+    const totalCredit = transactions
+        .filter(t => t.transaction_type === 'credit')
+        .reduce((sum, t) => sum + t.amount, 0);
+    
+    const totalDebit = transactions
+        .filter(t => t.transaction_type === 'debit')
+        .reduce((sum, t) => sum + t.amount, 0);
+    
+    const netAmount = totalCredit - totalDebit;
+    
+    document.getElementById('total-credit').textContent = `₹${totalCredit.toFixed(2)}`;
+    document.getElementById('total-debit').textContent = `₹${totalDebit.toFixed(2)}`;
+    
+    const netElement = document.getElementById('net-amount');
+    netElement.textContent = `₹${netAmount.toFixed(2)}`;
+    netElement.style.color = netAmount >= 0 ? '#00ff00' : 'var(--bright-red)';
+}
+
+async function deleteTransaction(transactionIndex) {
+    const transactionId = transactionIdMapping[transactionIndex];
+    
+    try {
+        const response = await fetch(LAMBDA_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'delete_transaction',
+                transaction_id: transactionId
+            })
+        });
+        
+        if (response.ok) {
+            await fetchTransactions(); // Refresh the list
+        } else {
+            console.error('Error deleting transaction');
+        }
+    } catch (error) {
+        console.error('Network error:', error);
+    }
+}
+
+// Handle transaction form submission
+function handleTransactionSubmit(event) {
+    event.preventDefault();
+    
+    const input = document.getElementById('transactionText');
+    const inputValue = input.value.trim();
+    
+    if (!inputValue) {
+        alert('Please enter a transaction');
+        return;
+    }
+    
+    const parsedTransaction = parseTransactionInput(inputValue);
+    
+    if (!parsedTransaction) {
+        alert('Invalid format. Use: "Description + amount" for income or "Description - amount" for expense');
+        return;
+    }
+    
+    // Disable form during submission
+    const submitBtn = event.target.querySelector('.btn-add-transaction');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Adding...';
+    
+    addTransaction(parsedTransaction).then(success => {
+        if (success) {
+            input.value = ''; // Clear the input
+        } else {
+            alert('Failed to add transaction');
+        }
+        
+        // Re-enable form
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Add';
+    });
+}
 
 function init() {
     updateClock();
     fetchSchedule(); // Fetch from API instead of using static data
+    fetchTransactions(); // Add this line
     updateWaterLevel();
     
     // Update every second
@@ -492,6 +702,8 @@ function init() {
     
     // Refresh schedule from API every 5 minutes
     setInterval(fetchSchedule, 5 * 60 * 1000);
+    // Refresh transactions every 10 minutes
+    setInterval(fetchTransactions, 10 * 60 * 1000);
 }
 
 // Keyboard accessibility
