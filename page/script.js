@@ -991,6 +991,57 @@ function downloadTransactions() {
     }
 }
 
+async function resetAllTasks() {
+    // Show confirmation dialog
+    const confirmation = confirm(
+        "Are you sure you want to reset all tasks and subtasks? This will mark everything as incomplete."
+    );
+    
+    if (!confirmation) {
+        return;
+    }
+    
+    const resetBtn = document.getElementById('resetBtn');
+    const originalText = resetBtn.textContent;
+    
+    // Disable button during API call
+    resetBtn.disabled = true;
+    resetBtn.textContent = '🔄 Resetting...';
+    
+    try {
+        const response = await fetch(LAMBDA_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'reset_all_tasks'
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            console.log('Reset successful:', result.message);
+            
+            // Refresh the schedule to show updated states
+            await fetchSchedule();
+            
+            alert('All tasks and subtasks have been reset successfully!');
+        } else {
+            const errorData = await response.json();
+            console.error('Error resetting tasks:', errorData.error);
+            alert('Error resetting tasks: ' + (errorData.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Network error:', error);
+        alert('Network error. Please try again.');
+    } finally {
+        // Re-enable button
+        resetBtn.disabled = false;
+        resetBtn.textContent = originalText;
+    }
+}
+
 function init() {
     updateClock();
     fetchSchedule(); // Fetch from API instead of using static data

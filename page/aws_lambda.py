@@ -60,6 +60,8 @@ def lambda_handler(event, context):
         elif action == "delete_transaction":
             transaction_table = dynamodb.Table("daily_transactions_table")
             return delete_transaction(transaction_table, body)
+        elif action == "reset_all_tasks":
+            return reset_all_tasks(task_table, subtask_table)
         else:
             return {
                 "statusCode": 400,
@@ -368,6 +370,43 @@ def delete_transaction(transaction_table, body):
 
     except Exception as e:
         print(f"Error deleting transaction: {str(e)}")
+        return {
+            "statusCode": 500,
+            "headers": {"Access-Control-Allow-Origin": "*"},
+            "body": json.dumps({"error": str(e)}),
+        }
+
+
+def reset_all_tasks(task_table, subtask_table):
+    try:
+        # Reset all tasks
+        task_response = task_table.scan()
+        tasks = task_response["Items"]
+
+        with task_table.batch_writer() as batch:
+            for task in tasks:
+                batch.put_item(Item={**task, "is_completed": False})
+
+        # Reset all subtasks
+        subtask_response = subtask_table.scan()
+        subtasks = subtask_response["Items"]
+
+        with subtask_table.batch_writer() as batch:
+            for subtask in subtasks:
+                batch.put_item(Item={**subtask, "is_completed": False})
+
+        return {
+            "statusCode": 200,
+            "headers": {"Access-Control-Allow-Origin": "*"},
+            "body": json.dumps(
+                {
+                    "message": f"Reset {len(tasks)} tasks and {len(subtasks)} subtasks successfully"
+                }
+            ),
+        }
+
+    except Exception as e:
+        print(f"Error resetting tasks: {str(e)}")
         return {
             "statusCode": 500,
             "headers": {"Access-Control-Allow-Origin": "*"},
